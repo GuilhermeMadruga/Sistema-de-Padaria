@@ -1,12 +1,13 @@
 from database import cadastrar_produto, registrar_pedido, listar_pedidos
 
+
 def menu():
     while True:
-        print("\n========= Padaria System =========")
-        print("1. Cadastrar Produto")
-        print("2. Registrar Pedido")
-        print("3. Listar Pedidos")
-        print("4. Sair")
+        print("\n========= 🍞 Padaria System =========")
+        print("1️⃣ Cadastrar Produto")
+        print("2️⃣ Registrar Pedido")
+        print("3️⃣ Listar Pedidos")
+        print("4️⃣ Sair")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
@@ -23,10 +24,11 @@ def menu():
             listar_pedidos()
 
         elif opcao == '4':
-            print("Saindo do sistema...")
+            print("👋 Saindo do sistema...")
             break
         else:
-            print("Opção inválida!")
+            print("❌ Opção inválida!")
+
 
 if __name__ == "__main__":
     menu()
