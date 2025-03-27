@@ -76,22 +76,23 @@ def editar_produto(produto_id, novo_nome, novo_preco):
 
 
 def registrar_pedido(produto_id, quantidade):
-    """ Registra um novo pedido apenas se o produto estiver ativo """
+    """ Registra um novo pedido apenas se o produto estiver ativo e salva o nome/preço no momento do pedido """
     conn = conectar()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT preco, ativo FROM produtos WHERE id = %s", (produto_id,))
+            cursor.execute("SELECT nome, preco, ativo FROM produtos WHERE id = %s", (produto_id,))
             produto = cursor.fetchone()
             if produto:
-                preco, ativo = produto
+                nome_produto, preco, ativo = produto
                 if not ativo:
                     print("❌ Este produto está inativo e não pode ser vendido!")
                     return
                 valor_total = preco * quantidade
-                cursor.execute("INSERT INTO pedidos (produto_id, quantidade, valor_total) VALUES (%s, %s, %s)",
-                               (produto_id, quantidade, valor_total))
+                cursor.execute("""
+                    INSERT INTO pedidos (produto_id, quantidade, valor_total, nome_produto, preco_unitario)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (produto_id, quantidade, valor_total, nome_produto, preco))
                 conn.commit()
                 print("✅ Pedido registrado com sucesso!")
             else:
@@ -104,21 +105,19 @@ def registrar_pedido(produto_id, quantidade):
 
 
 def listar_pedidos():
-    """ Lista todos os pedidos com os produtos associados """
+    """ Lista todos os pedidos mostrando o nome e preço original do produto no momento da compra """
     conn = conectar()
     if conn:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT p.id, pr.nome, p.quantidade, p.valor_total, p.data 
-                FROM pedidos p 
-                JOIN produtos pr ON p.produto_id = pr.id
+                SELECT id, nome_produto, quantidade, preco_unitario, valor_total, data
+                FROM pedidos
             """)
             pedidos = cursor.fetchall()
             print("\n📜 Pedidos cadastrados:")
             for pedido in pedidos:
-                print(
-                    f"🆔 ID: {pedido[0]}, 🏷 Produto: {pedido[1]}, 📦 Quantidade: {pedido[2]}, 💰 Valor: R${pedido[3]}, 📅 Data: {pedido[4]}")
+                print(f"🆔 ID: {pedido[0]}, 🏷 Produto: {pedido[1]}, 📦 Quantidade: {pedido[2]}, 💵 Preço Unitário: R${pedido[3]}, 💰 Valor Total: R${pedido[4]}, 📅 Data: {pedido[5]}")
         except Exception as e:
             print(f"❌ Erro ao listar pedidos: {e}")
         finally:
