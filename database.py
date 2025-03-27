@@ -104,6 +104,22 @@ def registrar_pedido(produto_id, quantidade):
             conn.close()
 
 
+def cancelar_pedido(pedido_id):
+    """ Cancela um pedido pelo ID, mantendo-o visível na listagem """
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE pedidos SET cancelado = TRUE WHERE id = %s", (pedido_id,))
+            conn.commit()
+            print("✅ Pedido cancelado com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao cancelar pedido: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
+
 def listar_pedidos():
     """ Lista todos os pedidos mostrando o nome e preço original do produto no momento da compra """
     conn = conectar()
@@ -111,13 +127,14 @@ def listar_pedidos():
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, nome_produto, quantidade, preco_unitario, valor_total, data
+                SELECT id, nome_produto, quantidade, preco_unitario, valor_total, data, cancelado
                 FROM pedidos
             """)
             pedidos = cursor.fetchall()
             print("\n📜 Pedidos cadastrados:")
             for pedido in pedidos:
-                print(f"🆔 ID: {pedido[0]}, 🏷 Produto: {pedido[1]}, 📦 Quantidade: {pedido[2]}, 💵 Preço Unitário: R${pedido[3]}, 💰 Valor Total: R${pedido[4]}, 📅 Data: {pedido[5]}")
+                status = "❌ Cancelado" if pedido[6] else "✅ Ativo"
+                print(f"🆔 ID: {pedido[0]}, 🏷 Produto: {pedido[1]}, 📦 Quantidade: {pedido[2]}, 💵 Preço Unitário: R${pedido[3]}, 💰 Valor Total: R${pedido[4]}, 📅 Data: {pedido[5]}, 📌 Status: {status}")
         except Exception as e:
             print(f"❌ Erro ao listar pedidos: {e}")
         finally:

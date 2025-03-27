@@ -1,6 +1,6 @@
 from database import (
     cadastrar_produto, inativar_produto, editar_produto,
-    registrar_pedido, listar_pedidos
+    registrar_pedido, listar_pedidos, cancelar_pedido
 )
 
 
@@ -9,18 +9,15 @@ def menu_principal():
     while True:
         print("\n========= 🍞 Padaria System =========")
         print("1️⃣ Cadastrar Produto")
-        print("2️⃣ Registrar Pedido")
-        print("3️⃣ Listar Pedidos")
-        print("4️⃣ Sair")
+        print("2️⃣ Gerenciar Pedidos")
+        print("3️⃣ Sair")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
             menu_cadastrar_produto()
         elif opcao == '2':
-            menu_registrar_pedido()
+            menu_gerenciar_pedido()
         elif opcao == '3':
-            listar_pedidos()
-        elif opcao == '4':
             print("👋 Saindo do sistema...")
             break
         else:
@@ -59,12 +56,14 @@ def menu_cadastrar_produto():
             print("❌ Opção inválida!")
 
 
-def menu_registrar_pedido():
+def menu_gerenciar_pedido():
     """ Submenu para gerenciar pedidos """
     while True:
         print("\n========= 🛒 Gerenciamento de Pedidos =========")
         print("1️⃣ Registrar Pedido")
-        print("2️⃣ Voltar ao menu principal")
+        print("2️⃣ Cancelar Pedido")
+        print("3️⃣ Listar Pedidos")
+        print("4️⃣ Voltar ao menu principal")
         opcao = input("Escolha uma opção: ")
 
         if opcao == '1':
@@ -73,6 +72,13 @@ def menu_registrar_pedido():
             registrar_pedido(produto_id, quantidade)
 
         elif opcao == '2':
+            pedido_id = int(input("ID do pedido que deseja cancelar: "))
+            cancelar_pedido(pedido_id)
+
+        elif opcao == '3':
+            listar_pedidos()
+
+        elif opcao == '4':
             break
         else:
             print("❌ Opção inválida!")
@@ -80,3 +86,5 @@ def menu_registrar_pedido():
 
 if __name__ == "__main__":
     menu_principal()
+
+
