@@ -1,6 +1,7 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -89,7 +90,7 @@ def registrar_pedido(produto_id, quantidade):
                     print("❌ Este produto está inativo e não pode ser vendido!")
                     return
                 valor_total = preco * quantidade
-                cursor.execute("""
+                cursor.execute(""" 
                     INSERT INTO pedidos (produto_id, quantidade, valor_total, nome_produto, preco_unitario)
                     VALUES (%s, %s, %s, %s, %s)
                 """, (produto_id, quantidade, valor_total, nome_produto, preco))
@@ -121,22 +122,48 @@ def cancelar_pedido(pedido_id):
 
 
 def listar_pedidos():
-    """ Lista todos os pedidos mostrando o nome e preço original do produto no momento da compra """
-    conn = conectar()
-    if conn:
+    """Lista pedidos filtrando por intervalo de datas."""
+    try:
+        data_inicial = input("Digite a data inicial (YYYY-MM-DD): ")
+        data_final = input("Digite a data final (YYYY-MM-DD): ")
+
         try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, nome_produto, quantidade, preco_unitario, valor_total, data, cancelado
+            dt_inicial = datetime.strptime(data_inicial, "%Y-%m-%d")
+            dt_final = datetime.strptime(data_final, "%Y-%m-%d")
+        except ValueError:
+            print("❌ Formato de data inválido! Use o formato YYYY-MM-DD.")
+            return
+
+        if dt_inicial > dt_final:
+            print("❌ Erro: A data inicial não pode ser maior que a data final!")
+            return
+        
+        conn = conectar()
+        if conn:
+            cur = conn.cursor()
+
+            # Alterando a consulta para usar a função DATE() para ignorar a hora
+            cur.execute("""
+                SELECT id, nome_produto, quantidade, valor_total, data, cancelado
                 FROM pedidos
-            """)
-            pedidos = cursor.fetchall()
-            print("\n📜 Pedidos cadastrados:")
-            for pedido in pedidos:
-                status = "❌ Cancelado" if pedido[6] else "✅ Ativo"
-                print(f"🆔 ID: {pedido[0]}, 🏷 Produto: {pedido[1]}, 📦 Quantidade: {pedido[2]}, 💵 Preço Unitário: R${pedido[3]}, 💰 Valor Total: R${pedido[4]}, 📅 Data: {pedido[5]}, 📌 Status: {status}")
-        except Exception as e:
-            print(f"❌ Erro ao listar pedidos: {e}")
-        finally:
-            cursor.close()
+                WHERE DATE(data) BETWEEN %s AND %s
+                ORDER BY data ASC
+            """, (dt_inicial.date(), dt_final.date()))
+
+            pedidos = cur.fetchall()
+
+            if not pedidos:
+                print("⚠️ Nenhum pedido encontrado no período selecionado.")
+            else:
+                print("\n📋 Pedidos:")
+                for pedido in pedidos:
+                    pedido_id, nome_produto, quantidade, valor_total, data, cancelado = pedido
+                    status = "Cancelado" if cancelado else "Ativo"
+                    print(f"🆔 ID: {pedido_id} | 📦 Produto: {nome_produto} | 🔢 Quantidade: {quantidade} | 💰 Valor: R${valor_total:.2f} | 📅 Data: {data.strftime('%Y-%m-%d')} | 🚩 Status: {status}")
+
+            # Fechando a conexão
+            cur.close()
             conn.close()
+
+    except Exception as e:
+        print(f"❌ Erro ao listar pedidos: {e}")
