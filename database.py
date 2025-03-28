@@ -121,28 +121,39 @@ def cancelar_pedido(pedido_id):
             conn.close()
 
 
-def listar_pedidos():
-    """Lista pedidos filtrando por intervalo de datas."""
+def listar_pedidos(data_inicial=None, data_final=None):
+    """
+    Lista pedidos filtrando por intervalo de datas.
+    
+    Args:
+        data_inicial (str, optional): Data inicial no formato 'YYYY-MM-DD'
+        data_final (str, optional): Data final no formato 'YYYY-MM-DD'
+    
+    Returns:
+        list: Lista de pedidos no intervalo
+    """
     try:
-        data_inicial = input("Digite a data inicial (YYYY-MM-DD): ")
-        data_final = input("Digite a data final (YYYY-MM-DD): ")
-
-        try:
+        # Converte as datas, se fornecidas
+        if data_inicial:
             dt_inicial = datetime.strptime(data_inicial, "%Y-%m-%d")
+        else:
+            # Se não fornecida, usa uma data muito antiga
+            dt_inicial = datetime(1900, 1, 1)
+        
+        if data_final:
             dt_final = datetime.strptime(data_final, "%Y-%m-%d")
-        except ValueError:
-            print("❌ Formato de data inválido! Use o formato YYYY-MM-DD.")
-            return
-
+        else:
+            # Se não fornecida, usa a data atual
+            dt_final = datetime.now()
+        
         if dt_inicial > dt_final:
-            print("❌ Erro: A data inicial não pode ser maior que a data final!")
-            return
+            raise ValueError("A data inicial não pode ser maior que a data final!")
         
         conn = conectar()
         if conn:
             cur = conn.cursor()
 
-            # Alterando a consulta para usar a função DATE() para ignorar a hora
+            # Consulta ajustada para aceitar datas opcionais
             cur.execute("""
                 SELECT id, nome_produto, quantidade, valor_total, data, cancelado
                 FROM pedidos
@@ -151,19 +162,16 @@ def listar_pedidos():
             """, (dt_inicial.date(), dt_final.date()))
 
             pedidos = cur.fetchall()
-
-            if not pedidos:
-                print("⚠️ Nenhum pedido encontrado no período selecionado.")
-            else:
-                print("\n📋 Pedidos:")
-                for pedido in pedidos:
-                    pedido_id, nome_produto, quantidade, valor_total, data, cancelado = pedido
-                    status = "Cancelado" if cancelado else "Ativo"
-                    print(f"🆔 ID: {pedido_id} | 📦 Produto: {nome_produto} | 🔢 Quantidade: {quantidade} | 💰 Valor: R${valor_total:.2f} | 📅 Data: {data.strftime('%Y-%m-%d')} | 🚩 Status: {status}")
-
-            # Fechando a conexão
+            
             cur.close()
             conn.close()
 
+            return pedidos
+
+    except ValueError as ve:
+        # Trata erros de formato de data
+        print(f"❌ Erro de formato de data: {ve}")
+        return []
     except Exception as e:
         print(f"❌ Erro ao listar pedidos: {e}")
+        return []
